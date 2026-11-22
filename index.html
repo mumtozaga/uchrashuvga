@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Uchrashuv — DreamDay</title>
+    
+    <!-- Google Fonts: Playfair Display va Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --bg-outer: #efe6e2;
+            --card-bg: #f7f1ee;
+            --burgundy: #9c1942;
+            --burgundy-dark: #7a1032;
+            --text-secondary: #6e5a5c;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 16px;
+            min-height: 100vh;
+            background-color: var(--bg-outer);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            color: var(--burgundy);
+        }
+
+        .font-serif-italic {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+        }
+
+        /* Asosiy Karta Konteyneri */
+        .invitation-card {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            min-height: 630px;
+            background-color: var(--card-bg);
+            border-radius: 36px;
+            padding: 34px 26px;
+            box-shadow: 
+                0 25px 50px rgba(74, 37, 45, 0.1),
+                0 6px 18px rgba(74, 37, 45, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(5deg); }
+        }
+        @keyframes pulseSparkle {
+            0%, 100% { opacity: 0.4; transform: scale(0.95); }
+            50% { opacity: 0.95; transform: scale(1.12); }
+        }
+        .decor-float { animation: floatSlow 4.5s ease-in-out infinite; }
+        .decor-sparkle { animation: pulseSparkle 3.5s ease-in-out infinite; }
+
+        /* Slayder ("Ochish uchun suring") */
+        .slider-track {
+            position: relative;
+            width: 100%;
+            max-width: 310px;
+            height: 58px;
+            background: linear-gradient(180deg, #fbf6f4 0%, #ffffff 100%);
+            border: 1.5px solid rgba(156, 25, 66, 0.22);
+            border-radius: 999px;
+            box-shadow: inset 0 2px 5px rgba(156, 25, 66, 0.05), 0 4px 12px rgba(156, 25, 66, 0.06);
+            display: flex;
+            align-items: center;
+            padding: 4px;
+            overflow: hidden;
+            touch-action: none;
+            cursor: pointer;
+        }
+
+        .slider-fill {
+            position: absolute;
+            left: 4px;
+            top: 4px;
+            bottom: 4px;
+            width: 50px;
+            background: linear-gradient(90deg, #b32250 0%, #9c1942 100%);
+            border-radius: 999px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .slider-text {
+            width: 100%;
+            text-align: center;
+            padding-left: 36px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            color: #6b5558;
+            pointer-events: none;
+            z-index: 2;
+            transition: opacity 0.2s ease;
+        }
+
+        .slider-thumb {
+            position: relative;
+            z-index: 3;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ffffff 0%, #f1e7e4 100%);
+            box-shadow: 0 4px 14px rgba(156, 25, 66, 0.26), inset 0 1px 2px rgba(255, 255, 255, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            touch-action: none;
+            will-change: transform;
+        }
+        .slider-thumb:active { cursor: grabbing; transform: scale(1.05); }
+        .slider-thumb svg { pointer-events: none; }
+
+        /* Screen transitions */
+        .step-screen {
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .hidden-screen {
+            display: none !important;
+            opacity: 0;
+            transform: translateY(12px) scale(0.98);
+        }
+        .fade-in {
+            animation: fadeInScreen 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes fadeInScreen {
+            from { opacity: 0; transform: translateY(14px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Tanlov kartalari */
+        .option-pill {
+            background: rgba(255, 255, 255, 0.65);
+            border: 1.5px solid rgba(156, 25, 66, 0.16);
+            border-radius: 16px;
+            padding: 11px 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .option-pill:hover {
+            background: rgba(255, 255, 255, 0.92);
+            border-color: rgba(156, 25, 66, 0.35);
+        }
+        .option-pill.selected {
+            background: #ffffff;
+            border-color: #9c1942;
+            box-shadow: 0 5px 14px rgba(156, 25, 66, 0.12);
+        }
+
+        .time-chip {
+            background: rgba(255, 255, 255, 0.65);
+            border: 1.5px solid rgba(156, 25, 66, 0.16);
+            border-radius: 12px;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6e5a5c;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .time-chip.selected {
+            background: #9c1942;
+            color: #ffffff;
+            border-color: #9c1942;
+            box-shadow: 0 4px 10px rgba(156, 25, 66, 0.22);
+        }
+
+        .activity-card {
+            background: rgba(255, 255, 255, 0.65);
+            border: 1.5px solid rgba(156, 25, 66, 0.16);
+            border-radius: 16px;
+            padding: 12px 14px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #6b243b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .activity-card:hover {
+            background: rgba(255, 255, 255, 0.92);
+        }
+        .activity-card.selected {
+            background: #ffffff;
+            border-color: #9c1942;
+            color: #9c1942;
+            box-shadow: 0 4px 12px rgba(156, 25, 66, 0.12);
+        }
+
+        /* Tugmalar */
+        .btn-burgundy {
+            background: linear-gradient(135deg, #ad1e4b 0%, #871136 100%);
+            color: #ffffff;
+            box-shadow: 0 10px 24px rgba(156, 25, 66, 0.26);
+            transition: all 0.25s ease;
+        }
+        .btn-burgundy:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(156, 25, 66, 0.34);
+        }
+        .btn-burgundy:active { transform: scale(0.98); }
+
+        .btn-telegram {
+            background: linear-gradient(135deg, #2AABEE 0%, #229ED9 100%);
+            color: #ffffff;
+            box-shadow: 0 10px 22px rgba(34, 158, 217, 0.28);
+            transition: all 0.25s ease;
+        }
+        .btn-telegram:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 26px rgba(34, 158, 217, 0.36);
+        }
+        .btn-telegram:active { transform: scale(0.98); }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.75);
+            color: #7a1032;
+            border: 1.5px solid rgba(156, 25, 66, 0.2);
+            transition: all 0.2s ease;
+        }
+        .btn-secondary:hover {
+            background: #ffffff;
+            border-color: rgba(156, 25, 66, 0.4);
+        }
+
+        /* Toast xabarnoma */
+        .toast-banner {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(90px);
+            background: #2b181e;
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 999px;
+            font-size: 12.5px;
+            font-weight: 600;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+            z-index: 100;
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            white-space: nowrap;
+        }
+        .toast-banner.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Konfetti */
+        .confetti-heart {
+            position: fixed;
+            pointer-events: none;
+            z-index: 99;
+            animation: flyHeart var(--duration, 2.5s) ease-out forwards;
+        }
+        @keyframes flyHeart {
+            0% { opacity: 1; transform: translate(0, 0) scale(0.5) rotate(0deg); }
+            100% { opacity: 0; transform: translate(var(--tx, 0px), var(--ty, -250px)) scale(1.2) rotate(var(--rot, 45deg)); }
+        }
+    </style>
+</head>
+<body>
+
+    <main id="cardContainer" class="invitation-card">
+        
+        <!-- Foni bezaklari (yurakchalar va gul barglari) -->
+        <div class="pointer-events-none absolute inset-0 overflow-hidden">
+            <svg class="decor-sparkle absolute top-20 left-7 w-5 h-5 text-[#c88a96]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L14.2 9.8L22 12L14.2 14.2L12 22L9.8 14.2L2 12L9.8 9.8L12 2Z"/></svg>
+            <svg class="decor-sparkle absolute top-16 right-7 w-5 h-5 text-[#c88a96]" style="animation-delay: 1.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L14.2 9.8L22 12L14.2 14.2L12 22L9.8 14.2L2 12L9.8 9.8L12 2Z"/></svg>
+            <svg class="decor-float absolute top-10 left-20 w-3.5 h-3.5 text-[#c98895] opacity-80" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <svg class="decor-float absolute bottom-24 right-8 w-4 h-4 text-[#d69ba6] opacity-60" style="animation-delay: 0.9s;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <svg class="decor-float absolute bottom-28 left-8 w-3.5 h-3.5 text-[#d69ba6] opacity-55" style="animation-delay: 1.7s;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </div>
+
+        <!-- ==================================================================
+             1-EKRAN: QULFLANGAN HOLAT (YURAK SLAYDERI)
+             ================================================================== -->
+        <section id="screenLocked" class="step-screen z-10">
+            <div class="flex flex-col items-center text-center mt-1">
+                <div class="px-5 py-1.5 rounded-full border border-[#9c1942]/25 bg-white/40 mb-5">
+                    <span class="text-[10px] font-bold tracking-[0.22em] uppercase text-[#871136]">FAQAT SIZ UCHUN</span>
+                </div>
+                <p class="font-serif-italic text-[17px] text-[#6d595b] mb-1">Bu alohida taklif</p>
+                <h1 data-recipient class="font-serif-italic font-semibold text-[48px] sm:text-[52px] leading-tight text-[#9c1942]">Shaxzoda</h1>
+            </div>
+
+            <!-- Ikiga bo'lingan yurak -->
+            <div class="relative w-[210px] h-[145px] flex items-center justify-center my-2">
+                <div id="heartGlow" class="absolute w-[135px] h-[135px] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.8)_0%,rgba(242,228,223,0)_70%)] transition-all duration-300 pointer-events-none"></div>
+                <svg id="heartLeft" class="absolute top-3 w-[115px] h-[115px] fill-[#9c1942] drop-shadow-[0_8px_16px_rgba(156,25,66,0.18)]" viewBox="0 0 120 120" style="transform: translateX(-22px) rotate(-4deg);">
+                    <path d="M 60 30 C 48 12, 16 14, 16 44 C 16 70, 48 94, 58 106 L 54 88 L 62 72 L 53 56 L 60 30 Z" />
+                </svg>
+                <svg id="heartRight" class="absolute top-3 w-[115px] h-[115px] fill-[#9c1942] drop-shadow-[0_8px_16px_rgba(156,25,66,0.18)]" viewBox="0 0 120 120" style="transform: translateX(22px) rotate(4deg);">
+                    <path d="M 60 30 C 72 12, 104 14, 104 44 C 104 70, 72 94, 62 106 L 54 88 L 62 72 L 53 56 L 60 30 Z" />
+                </svg>
+            </div>
+
+            <div class="w-full flex flex-col items-center">
+                <p class="text-center text-[13px] leading-relaxed text-[#5c494b] max-w-[290px] mb-6 font-medium">
+                    Yurakning ikki bo'lagini birlashtiring – kichkina savolim sizni kutyapti.
+                </p>
+
+                <!-- Slayder -->
+                <div id="sliderTrack" class="slider-track mb-7" ondragstart="return false;">
+                    <div id="sliderFill" class="slider-fill"></div>
+                    <span id="sliderLabel" class="slider-text uppercase">OCHISH UCHUN SURING</span>
+                    <div id="sliderThumb" class="slider-thumb" role="slider" aria-label="Ochish uchun suring" tabindex="0">
+                        <svg class="w-5 h-5 text-[#9c1942]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    </div>
+                </div>
+
+                <p class="text-[10px] font-bold tracking-[0.24em] uppercase text-[#6e5a5c]">
+                    KIMDAN: <span data-sender>JAVOHIR</span>
+                </p>
+            </div>
+        </section>
+
+        <!-- ==================================================================
+             2-EKRAN: ASOSIY SAVOL
+             ================================================================== -->
+        <section id="screenQuestion" class="step-screen hidden-screen z-10 text-center">
+            <div class="w-full flex items-center justify-between px-1 pt-1 mb-2">
+                <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-[#9c1942]">BITTA KICHKINA SAVOL</span>
+                <span class="text-[10px] font-bold tracking-wider text-[#7a6466] bg-white/60 px-2.5 py-1 rounded-full border border-[#9c1942]/15">1 / 3</span>
+            </div>
+
+            <div class="flex flex-col items-center my-auto px-1">
+                <div class="w-16 h-16 rounded-full bg-white/80 border border-[#9c1942]/15 flex items-center justify-center shadow-sm mb-5">
+                    <svg class="w-8 h-8 text-[#9c1942] animate-pulse" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                </div>
+
+                <p class="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#8a6f72] mb-2">
+                    Azizim <span data-recipient>Shaxzoda</span>
+                </p>
+
+                <h2 class="font-serif-italic font-semibold text-[28px] sm:text-[31px] leading-snug text-[#9c1942] mb-4">
+                    Menga bir oz vaqtingizni ajrata olasizmi? Birga uchrashsak...
+                </h2>
+
+                <p class="text-[13px] text-[#5e4b4d] leading-relaxed max-w-[290px]">
+                    Balki bu uchrashuvimiz eng yoqimli va unutilmas xotiralarimizdan biriga aylanar ✨
+                </p>
+            </div>
+
+            <div class="w-full flex flex-col items-center gap-3 relative min-h-[125px] justify-center mt-2">
+                <button id="btnSayYes" type="button" class="btn-burgundy w-full py-3.5 px-6 rounded-full text-[13.5px] font-bold tracking-wide cursor-pointer flex items-center justify-center gap-2">
+                    <span>HA, ALBATTA ❤️</span>
+                </button>
+
+                <button id="btnSayNo" type="button" class="btn-secondary py-2.5 px-8 rounded-full text-[12px] font-semibold cursor-pointer">
+                    Yo'q
+                </button>
+            </div>
+        </section>
+
+        <!-- ==================================================================
+             3-EKRAN: KUN VA VAQTNI TANLASH
+             ================================================================== -->
+        <section id="screenDateTime" class="step-screen hidden-screen z-10 text-left">
+            <div class="w-full flex items-center justify-between pb-3 border-b border-[#9c1942]/15 mb-3">
+                <span class="text-[10px] font-bold tracking-[0.18em] uppercase text-[#7a6466]">UCHRASHUV VAQTI</span>
+                <span class="text-[10px] font-bold text-[#9c1942] bg-white/60 px-2.5 py-1 rounded-full border border-[#9c1942]/15">2 / 3</span>
+            </div>
+
+            <div class="w-full mb-3">
+                <h3 class="font-serif-italic font-semibold text-[26px] text-[#9c1942] leading-snug mb-1">Kun va vaqtni tanlang</h3>
+                <p class="text-[12px] text-[#6e5a5c]">Sizga qaysi kun va soat qulayroq?</p>
+            </div>
+
+            <!-- Tezkor kunlar -->
+            <div id="quickDateList" class="w-full flex flex-col gap-2 mb-3">
+                <div class="option-pill selected" data-date-value="Shu hafta Shanba">
+                    <span class="text-[13px] font-semibold text-[#9c1942]">🌸 Shu hafta Shanba</span>
+                    <span class="w-4 h-4 rounded-full border-2 border-[#9c1942] flex items-center justify-center">
+                        <span class="w-2 h-2 rounded-full bg-[#9c1942] dot-inner"></span>
+                    </span>
+                </div>
+                <div class="option-pill" data-date-value="Shu hafta Yakshanba">
+                    <span class="text-[13px] font-semibold text-[#9c1942]">✨ Shu hafta Yakshanba</span>
+                    <span class="w-4 h-4 rounded-full border-2 border-[#9c1942]/30 flex items-center justify-center">
+                        <span class="w-2 h-2 rounded-full bg-transparent dot-inner"></span>
+                    </span>
+                </div>
+                <div class="option-pill" data-date-value="Ertaga kechqurun">
+                    <span class="text-[13px] font-semibold text-[#9c1942]">🌷 Ertaga kechqurun</span>
+                    <span class="w-4 h-4 rounded-full border-2 border-[#9c1942]/30 flex items-center justify-center">
+                        <span class="w-2 h-2 rounded-full bg-transparent dot-inner"></span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Yoki kalendardan aniq sana -->
+            <div class="w-full mb-3">
+                <label class="block text-[10.5px] font-bold uppercase tracking-wider text-[#7a6466] mb-1">YOKI ANIQ SANANI TANLANG:</label>
+                <input id="customDatePicker" type="date" class="w-full bg-white/80 border border-[#9c1942]/20 rounded-xl px-3.5 py-2 text-[12.5px] font-semibold text-[#9c1942] focus:outline-none focus:border-[#9c1942]">
+            </div>
+
+            <!-- Soat tanlash -->
+            <div class="w-full mb-4">
+                <label class="block text-[10.5px] font-bold uppercase tracking-wider text-[#7a6466] mb-1.5">SOAT NECHADA?</label>
+                <div id="timeChipGrid" class="grid grid-cols-4 gap-2">
+                    <button type="button" class="time-chip" data-time="18:00">18:00</button>
+                    <button type="button" class="time-chip selected" data-time="19:00">19:00</button>
+                    <button type="button" class="time-chip" data-time="20:00">20:00</button>
+                    <button type="button" class="time-chip" data-time="Kelishuv">Boshqa</button>
+                </div>
+            </div>
+
+            <button id="btnToActivities" type="button" class="btn-burgundy w-full py-3.5 rounded-full text-[13px] font-bold tracking-wide flex items-center justify-center gap-2 cursor-pointer">
+                <span>KEYINGI — REJANI TANLASH</span>
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+        </section>
+
+        <!-- ==================================================================
+             4-EKRAN: UCHRASHUV REJASI / KAYFIYATI
+             ================================================================== -->
+        <section id="screenActivities" class="step-screen hidden-screen z-10 text-left">
+            <div class="w-full flex items-center justify-between pb-3 border-b border-[#9c1942]/15 mb-3">
+                <button id="btnBackToDate" type="button" class="text-[11px] font-bold text-[#9c1942] flex items-center gap-1 cursor-pointer">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    Orqaga
+                </button>
+                <span class="text-[10px] font-bold text-[#9c1942] bg-white/60 px-2.5 py-1 rounded-full border border-[#9c1942]/15">3 / 3</span>
+            </div>
+
+            <div class="w-full mb-3">
+                <h3 class="font-serif-italic font-semibold text-[25px] text-[#9c1942] leading-snug mb-1">Nima qilamiz?</h3>
+                <p class="text-[12px] text-[#6e5a5c]">Bir nechta variantni tanlashingiz mumkin ✨</p>
+            </div>
+
+            <div id="activityGrid" class="w-full grid grid-cols-1 gap-2 mb-3">
+                <div class="activity-card selected" data-activity="Kofe va suhbat ☕">
+                    <span>Kofe va suhbat ☕</span>
+                </div>
+                <div class="activity-card" data-activity="Kechki ovqat 🍽️">
+                    <span>Kechki ovqat 🍽️</span>
+                </div>
+                <div class="activity-card" data-activity="Sayr qilish 🌙">
+                    <span>Sayr qilish 🌙</span>
+                </div>
+                <div class="activity-card" data-activity="Kino 🎬">
+                    <span>Kino 🎬</span>
+                </div>
+                <div class="activity-card" data-activity="Shirinliklar 🍰">
+                    <span>Shirinliklar 🍰</span>
+                </div>
+            </div>
+
+            <div class="w-full mb-3">
+                <input id="extraNoteInput" type="text" maxlength="140" placeholder="Qo'shimcha tilak yoki izoh (ixtiyoriy)..." class="w-full bg-white/80 border border-[#9c1942]/20 rounded-xl px-3.5 py-2.5 text-[12px] text-[#9c1942] placeholder-[#9c1942]/45 focus:outline-none focus:border-[#9c1942]">
+            </div>
+
+            <button id="btnConfirmPlan" type="button" class="btn-burgundy w-full py-3.5 rounded-full text-[13px] font-bold tracking-wide flex items-center justify-center gap-2 cursor-pointer">
+                <span>REJANI TASDIQLASH ❤️</span>
+            </button>
+        </section>
+
+        <!-- ==================================================================
+             5-EKRAN: YAKUNIY TAKLIFNOMA VA TELEGRAMGA JO'NATISH
+             ================================================================== -->
+        <section id="screenFinal" class="step-screen hidden-screen z-10 text-left">
+            <div class="w-full flex items-center justify-center pb-2 border-b border-[#9c1942]/15 mb-3">
+                <span class="text-[10px] font-bold tracking-[0.22em] uppercase text-[#9c1942]">UCHRASHUV BELGILANDI ✨</span>
+            </div>
+
+            <!-- Xulosa kartasi -->
+            <div class="w-full bg-white/85 border border-[#9c1942]/20 rounded-2xl p-4 shadow-sm relative mb-3">
+                <div class="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-[#f5e6ea] flex items-center justify-center text-[#9c1942]">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                </div>
+
+                <h4 class="font-serif-italic font-semibold text-[21px] text-[#9c1942] mb-1.5">
+                    Aziz <span data-recipient>Shaxzoda</span>,
+                </h4>
+                <p class="text-[11.5px] text-[#5e4b4d] leading-relaxed mb-3">
+                    Roziligingiz uchun rahmat! Quyidagi reja asosida sizni intizorlik bilan kutaman:
+                </p>
+
+                <div class="flex flex-col gap-1.5 text-[12px] font-semibold text-[#9c1942] border-t border-[#9c1942]/10 pt-2.5">
+                    <div class="flex items-center gap-2">
+                        <span>📅</span>
+                        <span id="finalDateText">Shu hafta Shanba</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span>🕖</span>
+                        <span id="finalTimeText">19:00</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span>✨</span>
+                        <span id="finalActivityText">Kofe va suhbat ☕</span>
+                    </div>
+                </div>
+
+                <div id="finalNoteWrapper" class="hidden mt-2.5 pt-2 border-t border-[#9c1942]/10 text-[11.5px] italic text-[#6e5a5c]">
+                    "<span id="finalNoteText"></span>"
+                </div>
+
+                <div class="mt-3 pt-2 border-t border-[#9c1942]/10 flex items-center justify-between">
+                    <span class="font-serif-italic font-semibold text-[15px] text-[#9c1942]">
+                        — <span data-sender>Javohir</span> ❤️
+                    </span>
+                </div>
+            </div>
+
+            <!-- Telegram va Nusxalash tugmalari -->
+            <div class="w-full flex flex-col gap-2.5 mt-auto">
+                <button id="btnSendTelegram" type="button" class="btn-telegram w-full py-3.5 px-4 rounded-full text-[13px] font-bold tracking-wide flex items-center justify-center gap-2 cursor-pointer">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                    <span>Telegram orqali jo'natish ✈️</span>
+                </button>
+
+                <button id="btnCopyText" type="button" class="btn-secondary w-full py-3 px-4 rounded-full text-[12.5px] font-bold tracking-wide flex items-center justify-center gap-2 cursor-pointer">
+                    <span>Matnni nusxalash 📋</span>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Nusxalash xabarnomasi (Toast) -->
+    <div id="toastBanner" class="toast-banner">Nusxalandi! Endi Telegramga tashlashingiz mumkin ✅</div>
+
+    <script>
+        /**
+         * =========================================================================
+         * 1. ASOSIY SOZLAMALAR (FAQAT SHU YERNI O'ZGARTIRSANGIZ BAS!)
+         * =========================================================================
+         */
+        const CONFIG = {
+            recipientName: "Mumtozam",     // <-- Taklif qilinayotgan qizning ismi
+            senderName: "Dilmuhammaddan",         // <-- O'zingizning ismingiz
+            telegramUsername: "@Dilmuhameed"           // <-- O'z Telegram username'ingizni @ belgisiz yozing (masalan: "javohir_uz"). Bo'sh qoldirsangiz, Telegram kontakt tanlash oynasi ochiladi.
+        };
+
+        // CONFIG dagi ismlarni saytdagi BARCHA joylarga avtomatik qo'yish
+        function applyConfigToDOM() {
+            document.querySelectorAll('[data-recipient]').forEach(el => {
+                el.textContent = CONFIG.recipientName;
+            });
+            document.querySelectorAll('[data-sender]').forEach(el => {
+                el.textContent = CONFIG.senderName;
+            });
+            document.title = `Uchrashuv (${CONFIG.recipientName}) — DreamDay`;
+        }
+        applyConfigToDOM();
+
+        // Foydalanuvchi tanlovlari holati (State)
+        let chosenDate = "Shu hafta Shanba";
+        let chosenTime = "19:00";
+        let chosenActivities = ["Kofe va suhbat ☕"];
+        let chosenNote = "";
+
+        // Ekranlarni silliq almashtirish
+        function switchScreen(fromId, toId) {
+            const fromEl = document.getElementById(fromId);
+            const toEl = document.getElementById(toId);
+
+            fromEl.style.opacity = '0';
+            fromEl.style.transform = 'scale(0.96)';
+
+            setTimeout(() => {
+                fromEl.classList.add('hidden-screen');
+                toEl.classList.remove('hidden-screen');
+                toEl.classList.add('fade-in');
+            }, 320);
+        }
+
+        // Toast xabarnoma ko'rsatish
+        function showToast(msg) {
+            const toast = document.getElementById('toastBanner');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3200);
+        }
+
+        /**
+         * =========================================================================
+         * 2. YURAK SLAYDERI (Pointer Events + Click-to-slide)
+         * =========================================================================
+         */
+        const sliderTrack = document.getElementById('sliderTrack');
+        const sliderThumb = document.getElementById('sliderThumb');
+        const sliderFill = document.getElementById('sliderFill');
+        const sliderLabel = document.getElementById('sliderLabel');
+        const heartLeft = document.getElementById('heartLeft');
+        const heartRight = document.getElementById('heartRight');
+        const heartGlow = document.getElementById('heartGlow');
+
+        let isDragging = false;
+        let isUnlocked = false;
+        let activePointerId = null;
+        let dragStartX = 0;
+        let dragStartOffset = 0;
+        let currentX = 0;
+        let totalMoved = 0;
+
+        function getMaxSlide() {
+            const trackWidth = sliderTrack.getBoundingClientRect().width || 310;
+            const thumbWidth = sliderThumb.getBoundingClientRect().width || 50;
+            return Math.max(180, trackWidth - thumbWidth - 8);
+        }
+
+        function updateSlideUI(offsetX, smooth = false) {
+            const maxDist = getMaxSlide();
+            const clampedX = Math.max(0, Math.min(offsetX, maxDist));
+            const progress = maxDist > 0 ? clampedX / maxDist : 0;
+
+            const tStyle = smooth ? 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)' : 'none';
+            const fStyle = smooth ? 'width 0.4s cubic-bezier(0.22, 1, 0.36, 1)' : 'none';
+
+            sliderThumb.style.transition = tStyle;
+            sliderThumb.style.transform = `translateX(${clampedX}px)`;
+
+            sliderFill.style.transition = fStyle;
+            sliderFill.style.width = `${50 + clampedX}px`;
+
+            sliderLabel.style.opacity = Math.max(0, 1 - progress * 1.5);
+
+            const gap = 22 * (1 - progress);
+            const angle = 4 * (1 - progress);
+
+            heartLeft.style.transition = tStyle;
+            heartRight.style.transition = tStyle;
+            heartLeft.style.transform = `translateX(${-gap}px) rotate(${-angle}deg)`;
+            heartRight.style.transform = `translateX(${gap}px) rotate(${angle}deg)`;
+
+            heartGlow.style.transform = `scale(${1 + progress * 0.35})`;
+            heartGlow.style.opacity = `${0.6 + progress * 0.4}`;
+
+            return progress;
+        }
+
+        function completeUnlock() {
+            if (isUnlocked) return;
+            isUnlocked = true;
+            isDragging = false;
+            currentX = getMaxSlide();
+            updateSlideUI(currentX, true);
+
+            spawnHeartConfetti(34);
+
+            setTimeout(() => {
+                switchScreen('screenLocked', 'screenQuestion');
+            }, 500);
+        }
+
+        sliderTrack.addEventListener('pointerdown', (e) => {
+            if (isUnlocked) return;
+            if (e.button !== undefined && e.button !== 0) return;
+            e.preventDefault();
+
+            isDragging = true;
+            activePointerId = e.pointerId;
+            dragStartX = e.clientX;
+            dragStartOffset = currentX;
+            totalMoved = 0;
+
+            if (sliderTrack.setPointerCapture && e.pointerId !== undefined) {
+                try { sliderTrack.setPointerCapture(e.pointerId); } catch (_) {}
+            }
+        });
+
+        sliderTrack.addEventListener('pointermove', (e) => {
+            if (!isDragging || isUnlocked) return;
+            if (activePointerId !== null && e.pointerId !== activePointerId) return;
+
+            const deltaX = e.clientX - dragStartX;
+            totalMoved = Math.max(totalMoved, Math.abs(deltaX));
+
+            const maxDist = getMaxSlide();
+            const effectiveDelta = deltaX >= 0 ? deltaX : Math.abs(deltaX) * 0.85;
+            currentX = Math.max(0, Math.min(dragStartOffset + effectiveDelta, maxDist));
+
+            const progress = updateSlideUI(currentX, false);
+            if (progress >= 0.85) {
+                completeUnlock();
+            }
+        });
+
+        function endSlide(e) {
+            if (!isDragging || isUnlocked) return;
+            if (activePointerId !== null && e.pointerId !== activePointerId) return;
+
+            isDragging = false;
+            activePointerId = null;
+
+            const maxDist = getMaxSlide();
+            if (totalMoved < 8 || (currentX / maxDist) >= 0.85) {
+                completeUnlock();
+            } else {
+                currentX = 0;
+                updateSlideUI(0, true);
+            }
+        }
+
+        sliderTrack.addEventListener('pointerup', endSlide);
+        sliderTrack.addEventListener('pointercancel', endSlide);
+
+        sliderThumb.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                completeUnlock();
+            }
+        });
+
+        /**
+         * =========================================================================
+         * 3. 2-EKRAN: SAVOL VA QOCHUVCHI "YO'Q" TUGMASI
+         * =========================================================================
+         */
+        const btnSayYes = document.getElementById('btnSayYes');
+        const btnSayNo = document.getElementById('btnSayNo');
+
+        const noLabels = [
+            "Adashdingiz 😉",
+            "Yana o'ylab ko'ring ✨",
+            "Bu tugma ishlamaydi ❤️",
+            "Qochib ketdi! 🙈",
+            "Faqat 'HA' ishlaydi 😊"
+        ];
+        let noIdx = 0;
+
+        function moveNoButton() {
+            const rx = (Math.random() * 2 - 1) * 85;
+            const ry = (Math.random() * 2 - 1) * 36;
+            btnSayNo.style.transform = `translate(${rx}px, ${ry}px)`;
+            btnSayNo.textContent = noLabels[noIdx % noLabels.length];
+            noIdx++;
+        }
+
+        btnSayNo.addEventListener('mouseenter', moveNoButton);
+        btnSayNo.addEventListener('touchstart', (e) => { e.preventDefault(); moveNoButton(); });
+        btnSayNo.addEventListener('click', (e) => { e.preventDefault(); moveNoButton(); });
+
+        btnSayYes.addEventListener('click', () => {
+            spawnHeartConfetti(42);
+            switchScreen('screenQuestion', 'screenDateTime');
+        });
+
+        /**
+         * =========================================================================
+         * 4. 3-EKRAN: KUN VA VAQTNI TANLASH
+         * =========================================================================
+         */
+        const quickDatePills = document.querySelectorAll('#quickDateList .option-pill');
+        const customDatePicker = document.getElementById('customDatePicker');
+
+        quickDatePills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                quickDatePills.forEach(p => {
+                    p.classList.remove('selected');
+                    p.querySelector('.w-4').classList.replace('border-[#9c1942]', 'border-[#9c1942]/30');
+                    p.querySelector('.dot-inner').classList.replace('bg-[#9c1942]', 'bg-transparent');
+                });
+                pill.classList.add('selected');
+                pill.querySelector('.w-4').classList.replace('border-[#9c1942]/30', 'border-[#9c1942]');
+                pill.querySelector('.dot-inner').classList.replace('bg-transparent', 'bg-[#9c1942]');
+                chosenDate = pill.getAttribute('data-date-value');
+                customDatePicker.value = "";
+            });
+        });
+
+        customDatePicker.addEventListener('change', (e) => {
+            if (e.target.value) {
+                quickDatePills.forEach(p => {
+                    p.classList.remove('selected');
+                    p.querySelector('.w-4').classList.replace('border-[#9c1942]', 'border-[#9c1942]/30');
+                    p.querySelector('.dot-inner').classList.replace('bg-[#9c1942]', 'bg-transparent');
+                });
+                chosenDate = e.target.value;
+            }
+        });
+
+        const timeChips = document.querySelectorAll('#timeChipGrid .time-chip');
+        timeChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                timeChips.forEach(c => c.classList.remove('selected'));
+                chip.classList.add('selected');
+                chosenTime = chip.getAttribute('data-time');
+            });
+        });
+
+        document.getElementById('btnToActivities').addEventListener('click', () => {
+            switchScreen('screenDateTime', 'screenActivities');
+        });
+
+        document.getElementById('btnBackToDate').addEventListener('click', () => {
+            switchScreen('screenActivities', 'screenDateTime');
+        });
+
+        /**
+         * =========================================================================
+         * 5. 4-EKRAN: UCHRASHUV REJASINI TANLASH (MULTI-SELECT)
+         * =========================================================================
+         */
+        const activityCards = document.querySelectorAll('#activityGrid .activity-card');
+        activityCards.forEach(card => {
+            card.addEventListener('click', () => {
+                card.classList.toggle('selected');
+            });
+        });
+
+        document.getElementById('btnConfirmPlan').addEventListener('click', () => {
+            const selectedEls = document.querySelectorAll('#activityGrid .activity-card.selected');
+            chosenActivities = Array.from(selectedEls).map(el => el.getAttribute('data-activity'));
+            if (chosenActivities.length === 0) {
+                chosenActivities = ["Birga yoqimli suhbat ✨"];
+            }
+
+            chosenNote = document.getElementById('extraNoteInput').value.trim();
+
+            // Yakuniy ekranga ma'lumotlarni joylash
+            document.getElementById('finalDateText').textContent = chosenDate;
+            document.getElementById('finalTimeText').textContent = chosenTime;
+            document.getElementById('finalActivityText').textContent = chosenActivities.join(', ');
+
+            const noteWrap = document.getElementById('finalNoteWrapper');
+            if (chosenNote) {
+                document.getElementById('finalNoteText').textContent = chosenNote;
+                noteWrap.classList.remove('hidden');
+            } else {
+                noteWrap.classList.add('hidden');
+            }
+
+            spawnHeartConfetti(55);
+            switchScreen('screenActivities', 'screenFinal');
+        });
+
+        /**
+         * =========================================================================
+         * 6. 5-EKRAN: TELEGRAMGA JO'NATISH VA MATNNI NUSXALASH
+         * =========================================================================
+         */
+        function buildFormattedReplyMessage() {
+            let msg = `Assalomu alaykum ${CONFIG.senderName}! Taklifingizni qabul qildim ❤️\n\n`;
+            msg += `📅 Kun: ${chosenDate}\n`;
+            msg += `🕖 Soat: ${chosenTime}\n`;
+            msg += `✨ Reja: ${chosenActivities.join(', ')}`;
+            if (chosenNote) {
+                msg += `\n💌 Izoh: "${chosenNote}"`;
+            }
+            return msg;
+        }
+
+        // Telegram orqali jo'natish tugmasi
+        document.getElementById('btnSendTelegram').addEventListener('click', () => {
+            const text = buildFormattedReplyMessage();
+            const encodedText = encodeURIComponent(text);
+            const cleanUsername = (CONFIG.telegramUsername || "").replace(/^@/, "").trim();
+
+            let telegramUrl = "";
+            if (cleanUsername) {
+                // To'g'ridan-to'g'ri yuboruvchining shaxsiy chatini tayyor matn bilan ochadi
+                telegramUrl = `https://t.me/${cleanUsername}?text=${encodedText}`;
+            } else {
+                // Telegram kontakt tanlash (Share) oynasini ochadi
+                const pageUrl = encodeURIComponent(window.location.href);
+                telegramUrl = `https://t.me/share/url?url=${pageUrl}&text=${encodedText}`;
+            }
+
+            window.open(telegramUrl, '_blank', 'noopener,noreferrer');
+        });
+
+        // Matnni nusxalash tugmasi
+        document.getElementById('btnCopyText').addEventListener('click', () => {
+            const text = buildFormattedReplyMessage();
+            const dummy = document.createElement('textarea');
+            dummy.style.position = 'fixed';
+            dummy.style.opacity = '0';
+            document.body.appendChild(dummy);
+            dummy.value = text;
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+
+            showToast("Nusxalandi! Endi Telegramga tashlashingiz mumkin ✅");
+        });
+
+        /**
+         * =========================================================================
+         * 7. YURAKCHALI KONFETTI ANIMATSIYASI
+         * =========================================================================
+         */
+        function spawnHeartConfetti(count = 28) {
+            const colors = ['#9c1942', '#c22959', '#e05c84', '#eb8aa8', '#871136'];
+            for (let i = 0; i < count; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'confetti-heart';
+
+                const size = Math.floor(Math.random() * 14) + 12;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const startLeft = window.innerWidth / 2 + (Math.random() * 160 - 80);
+                const startTop = window.innerHeight / 2 + (Math.random() * 90 - 45);
+
+                const tx = (Math.random() * 2 - 1) * 260;
+                const ty = -(Math.random() * 280 + 130);
+                const rot = (Math.random() * 2 - 1) * 180;
+                const duration = (Math.random() * 1.2 + 1.4).toFixed(2);
+
+                heart.style.left = `${startLeft}px`;
+                heart.style.top = `${startTop}px`;
+                heart.style.setProperty('--tx', `${tx}px`);
+                heart.style.setProperty('--ty', `${ty}px`);
+                heart.style.setProperty('--rot', `${rot}deg`);
+                heart.style.setProperty('--duration', `${duration}s`);
+
+                heart.innerHTML = `
+                    <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                `;
+                document.body.appendChild(heart);
+                setTimeout(() => heart.remove(), duration * 1000);
+            }
+        }
+    </script>
+</body>
+</html>
